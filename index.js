@@ -1,54 +1,58 @@
-const accessKey = "SmcLP_xBeULdPf5UsE-DwiIgdGU9FVMra5JVCPlaT0w";
+const apikey = "46f80a02ecae410460d59960ded6e1c6";
+
+const weatherDataEl = document.getElementById("weather-data");
+
+const cityInputEl = document.getElementById("city-input");
 
 const formEl = document.querySelector("form");
-const searchInputEl = document.getElementById("search-input");
-const searchResultsEl = document.querySelector(".search-results");
-const showMoreButtonEl = document.getElementById("show-more-button");
-
-let inputData = "";
-let page = 1;
-
-async function searchImages() {
-  inputData = searchInputEl.value;
-  const url = `https://api.unsplash.com/search/photos?page=${page}&query=${inputData}&client_id=${accessKey}`;
-
-  const response = await fetch(url);
-  const data = await response.json();
-  if (page === 1) {
-    searchResultsEl.innerHTML = "";
-  }
-
-  const results = data.results;
-
-  results.map((result) => {
-    const imageWrapper = document.createElement("div");
-    imageWrapper.classList.add("search-result");
-    const image = document.createElement("img");
-    image.src = result.urls.small;
-    image.alt = result.alt_description;
-    const imageLink = document.createElement("a");
-    imageLink.href = result.links.html;
-    imageLink.target = "_blank";
-    imageLink.textContent = result.alt_description;
-
-    imageWrapper.appendChild(image);
-    imageWrapper.appendChild(imageLink);
-    searchResultsEl.appendChild(imageWrapper);
-  });
-
-  page++;
-
-  if (page > 1) {
-    showMoreButtonEl.style.display = "block";
-  }
-}
 
 formEl.addEventListener("submit", (event) => {
   event.preventDefault();
-  page = 1;
-  searchImages();
+  const cityValue = cityInputEl.value;
+  getWeatherData(cityValue);
 });
 
-showMoreButtonEl.addEventListener("click", () => {
-  searchImages();
-});
+async function getWeatherData(cityValue) {
+  try {
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${cityValue}&appid=${apikey}&units=metric`
+    );
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const data = await response.json();
+
+    const temperature = Math.round(data.main.temp);
+
+    const description = data.weather[0].description;
+
+    const icon = data.weather[0].icon;
+
+    const details = [
+      `Feels like: ${Math.round(data.main.feels_like)}`,
+      `Humidity: ${data.main.humidity}%`,
+      `Wind speed: ${data.wind.speed} m/s`,
+    ];
+
+    weatherDataEl.querySelector(
+      ".icon"
+    ).innerHTML = `<img src="http://openweathermap.org/img/wn/${icon}.png" alt="Weather Icon">`;
+    weatherDataEl.querySelector(
+      ".temperature"
+    ).textContent = `${temperature}°C`;
+    weatherDataEl.querySelector(".description").textContent = description;
+
+    weatherDataEl.querySelector(".details").innerHTML = details
+      .map((detail) => `<div>${detail}</div>`)
+      .join("");
+  } catch (error) {
+    weatherDataEl.querySelector(".icon").innerHTML = "";
+    weatherDataEl.querySelector(".temperature").textContent = "";
+    weatherDataEl.querySelector(".description").textContent =
+      "An error happened, please try again later";
+
+    weatherDataEl.querySelector(".details").innerHTML = "";
+  }
+}
